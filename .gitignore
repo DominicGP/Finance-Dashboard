@@ -1,0 +1,10 @@
+# Build output (Maven)
+target/
+*.class
+
+# Ignore generated DB
+transactions.db
+
+# Files 
+Java Finance Dashboard.pdf
+ToDo.txt
