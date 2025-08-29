@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /*
  * Class that handles any interactions that are done with the database
@@ -49,6 +51,27 @@ public class DatabaseManager {
     }
 
     /**
+     * Helper method that loops through the found rows in the database and creates a list of transactions
+     * @param rs Applicable rows of data found
+     * @return Returns a list of transactions
+     * @throws SQLException If an error occurs while accessing the resultset
+     */
+    private List<Transaction> getTransactionsHelper (ResultSet rs) throws SQLException {
+        List<Transaction> transactions = new ArrayList<>();
+        while (rs.next()) {
+                int id = rs.getInt("id");
+                LocalDate date = LocalDate.parse(rs.getString("date"));
+                Transaction.Category category = Transaction.Category.valueOf(rs.getString("category"));
+                String description = rs.getString("description");
+                BigDecimal amount = rs.getBigDecimal("amount");
+
+                Transaction transaction = new Transaction(id, date, category, description, amount);
+                transactions.add(transaction);
+        }
+        return transactions;
+    }
+
+    /**
      * Adds a transaction to the database
      * 
      * @param date The date of the transaction
@@ -63,10 +86,10 @@ public class DatabaseManager {
         String sql = "INSERT INTO transactions(id, date, category, description, amount) VALUES (?, ?, ?, ?, ?)";
         //Try to add transaction to database
         try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int nextId = getNextId(conn);  // Fetch next ID
+            int nextId = getNextId(conn); 
             pstmt.setInt(1, nextId);
-            pstmt.setString(2, date.toString()); // LocalDate → TEXT (ISO-8601, e.g., "2025-06-24")
-            pstmt.setString(3, category.name()); // enum → TEXT (e.g., "FOOD")
+            pstmt.setString(2, date.toString());
+            pstmt.setString(3, category.name());
             pstmt.setString(4, description);
             pstmt.setBigDecimal(5, amount);
             pstmt.executeUpdate();
@@ -92,19 +115,10 @@ public class DatabaseManager {
 
         // Try to connect to the database and get the transactions
         try (Connection conn = connect();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql)) {
-            // Loop through the rows and creates transactions to add to the list
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                LocalDate date = LocalDate.parse(rs.getString("date"));
-                Transaction.Category category = Transaction.Category.valueOf(rs.getString("category"));
-                String description = rs.getString("description");
-                BigDecimal amount = rs.getBigDecimal("amount");
-
-                Transaction transaction = new Transaction(id, date, category, description, amount);
-                transactions.add(transaction);
-            }
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
+            // Call private method that gets the transactions
+            transactions = getTransactionsHelper(rs);
 
         } catch (SQLException e) {
             System.out.println("Error fetching transactions: " + e.getMessage());
@@ -132,6 +146,31 @@ public class DatabaseManager {
     }
 
     /**
+     * Updates a transaction
+     * 
+     * @param transaction Transaction that needs to be updated
+     */
+    public void updateTransaction(Transaction transaction) {
+        //SQL statement
+        String sql = "UPDATE transactions SET description = ?, amount = ?, date = ?, category = ? WHERE id = ?";
+        
+        // Try to connect and run prepared statement
+        try (Connection conn = this.connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, transaction.getDescription());
+            pstmt.setBigDecimal(2, transaction.getAmount());
+            pstmt.setString(3, transaction.getDate().toString());
+            pstmt.setString(4, transaction.getCategory().toString()); 
+            pstmt.setInt(5, transaction.getId());
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Updateerror: " + e.getMessage());
+        }
+    }
+
+    /**
      * Used to filter the transactions by the given user category
      * 
      * @param category User input category used to filter transactions by
@@ -147,17 +186,8 @@ public class DatabaseManager {
         try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, category.name());
             ResultSet rs = pstmt.executeQuery();
-            // Loop through the rows and creates transactions to add to the list
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                LocalDate date = LocalDate.parse(rs.getString("date"));
-                Transaction.Category rowCategory = Transaction.Category.valueOf(rs.getString("category"));
-                String description = rs.getString("description");
-                BigDecimal amount = rs.getBigDecimal("amount");
-
-                Transaction transaction = new Transaction(id, date, rowCategory, description, amount);
-                transactions.add(transaction);
-            }
+            // Call private method that gets the transactions
+            transactions = getTransactionsHelper(rs);
         } catch (SQLException e) {
             System.out.println("Get spending by category reading error: " + e.getMessage());
         }
@@ -182,17 +212,8 @@ public class DatabaseManager {
             pstmt.setString(1, startDate.toString());
             pstmt.setString(2, endDate.toString());
             ResultSet rs = pstmt.executeQuery();
-            // Loop through the rows and creates transactions to add to the list
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                LocalDate date = LocalDate.parse(rs.getString("date"));
-                Transaction.Category rowCategory = Transaction.Category.valueOf(rs.getString("category"));
-                String description = rs.getString("description");
-                BigDecimal amount = rs.getBigDecimal("amount");
-
-                Transaction transaction = new Transaction(id, date, rowCategory, description, amount);
-                transactions.add(transaction);
-            }
+            // Call private method that gets the transactions
+            transactions = getTransactionsHelper(rs);
         } catch (SQLException e) {
             System.out.println("Get spending over time reading error: " + e.getMessage());
         }
@@ -215,17 +236,8 @@ public class DatabaseManager {
         try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBigDecimal(1, userAmount);
             ResultSet rs = pstmt.executeQuery();
-            // Loop through the rows and creates transactions to add to the list
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                LocalDate date = LocalDate.parse(rs.getString("date"));
-                Transaction.Category rowCategory = Transaction.Category.valueOf(rs.getString("category"));
-                String description = rs.getString("description");
-                BigDecimal amount = rs.getBigDecimal("amount");
-
-                Transaction transaction = new Transaction(id, date, rowCategory, description, amount);
-                transactions.add(transaction);
-            }
+            // Call private method that gets the transactions
+            transactions = getTransactionsHelper(rs);
         } catch (SQLException e) {
             System.out.println("Get transaction above reading error: " + e.getMessage());
         }
@@ -247,21 +259,30 @@ public class DatabaseManager {
         try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBigDecimal(1, userAmount);
             ResultSet rs = pstmt.executeQuery();
-            // Loop through the rows and creates transactions to add to the list
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                LocalDate date = LocalDate.parse(rs.getString("date"));
-                Transaction.Category rowCategory = Transaction.Category.valueOf(rs.getString("category"));
-                String description = rs.getString("description");
-                BigDecimal amount = rs.getBigDecimal("amount");
-
-                Transaction transaction = new Transaction(id, date, rowCategory, description, amount);
-                transactions.add(transaction);
-            }
+            // Call private method that gets the transactions
+            transactions = getTransactionsHelper(rs);
         } catch (SQLException e) {
             System.out.println("Get transaction below reading error: " + e.getMessage());
         }
         return transactions;
     }
+
+    /**
+     * Used to get the years from the existing transactions
+     *
+     * @return The set of years from the transactions
+     */
+    public Set<Integer> extractYears() {
+        // Set of years, sorted
+        Set<Integer> years = new TreeSet<>();
+        // Get all transactions
+        List<Transaction> transactions = getTransactions();
+        // Go through every transaction and get the year
+        for (Transaction t : transactions) {
+            years.add(t.getDate().getYear());
+        }
+        return years;
+    }
+
 
 }

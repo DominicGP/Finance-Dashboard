@@ -21,14 +21,18 @@ public class Transaction {
     INSURANCE,
     SUBSCRIPTIONS,
     DONATION,
-    MISCELLANEOUS
+    MISCELLANEOUS;
+
+    public boolean isCredit() {
+        return this == SALARY || this == INVESTMENT;
+    }
 }
 
     private final int id;
-    private final LocalDate date;
-    private final Category category;
-    private final String description; 
-    private final BigDecimal amount; 
+    private LocalDate date;
+    private Category category;
+    private String description; 
+    private BigDecimal amount; 
 
 
     public Transaction (int id, LocalDate date, Category category, String description, BigDecimal amount) {
@@ -59,6 +63,23 @@ public class Transaction {
     public BigDecimal getAmount() {
         return amount;
     }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount; 
+    }
+
 
 
 

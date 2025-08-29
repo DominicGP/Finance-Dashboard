@@ -1,0 +1,7 @@
+.default-color0.chart-bar {
+    -fx-bar-fill: #4CAF50; /* income */
+}
+
+.default-color1.chart-bar {
+    -fx-bar-fill: #F44336; /* expenses */
+}
