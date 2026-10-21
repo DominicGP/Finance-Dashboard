@@ -285,4 +285,29 @@ public class DatabaseManager {
     }
 
 
+public void initializeDatabase() {
+    String sql = """
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY,
+            date TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            amount REAL NOT NULL
+        );
+        """;
+
+    try (Connection conn = connect();
+         Statement stmt = conn.createStatement()) {
+
+        stmt.executeUpdate(sql);
+        System.out.println("Database initialized.");
+
+    } catch (SQLException e) {
+        throw new IllegalStateException(
+            "Failed to initialize database", e
+        );
+    }
+}
+
+
 }

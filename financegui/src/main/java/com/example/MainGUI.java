@@ -33,6 +33,10 @@ public class MainGUI extends Application {
     */
     @Override
     public void start(Stage primaryStage) {
+        // Initialize database before building the GUI
+        DatabaseManager dbManager = new DatabaseManager();
+        dbManager.initializeDatabase();
+
         Scene scene = new Scene(buildMainLayout(primaryStage), 1900, 900);
         primaryStage.setTitle("Transaction Manager");
         primaryStage.setScene(scene);
